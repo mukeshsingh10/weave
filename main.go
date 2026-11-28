@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+
+	"github.com/joho/godotenv"
+	"github.com/mukeshsingh10/weave/internal/config"
 )
 
 type Response struct {
@@ -17,7 +20,7 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	resp := Response{
+	resp := &Response{
 		Status: "ok",
 	}
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
@@ -27,11 +30,18 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("no .env file found, using environment variables")
+	}
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", handleHealth)
 
 	server := &http.Server{
-		Addr:    ":4444",
+		Addr:    cfg.HTTPPort,
 		Handler: mux,
 	}
 	log.Printf("server is listening on %s", server.Addr)
